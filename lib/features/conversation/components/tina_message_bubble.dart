@@ -12,9 +12,10 @@ class TinaMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: 16, end: 60),
+    return Container(
+      padding: const EdgeInsetsDirectional.only(bottom: 16, start: 60),
       child: Row(
+        textDirection: TextDirection.ltr,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Tina's avatar
@@ -98,7 +99,7 @@ class TinaMessageBubble extends StatelessWidget {
 
   Widget _buildTimestamp(BuildContext context) {
     return Padding(
-      padding: const EdgeInsetsDirectional.only(top: 4, end: 8),
+      padding: const EdgeInsetsDirectional.only(top: 4, start: 8),
       child: Text(
         _formatTime(transcriptLine.timestamp),
         style: Theme.of(context).textTheme.bodySmall?.copyWith(

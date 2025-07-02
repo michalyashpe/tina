@@ -13,29 +13,28 @@ class UserMessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: 16, start: 60),
+      padding: const EdgeInsetsDirectional.only(bottom: 16, end: 60),
       child: Row(
+        textDirection: TextDirection.rtl,
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.end,
+        // mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          _buildAvatar(),
+          const SizedBox(width: 12),
+
           // Message bubble
-          Expanded(
-            child: Column(
+            Expanded(child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 _buildMessageBubble(context),
                 _buildTimestamp(context),
               ],
-            ),
-          ),
+            )),
           
-          const SizedBox(width: 12),
           
           // User's avatar
-          _buildAvatar(),
         ],
-      ),
-    );
+    ));
   }
 
   Widget _buildAvatar() {
@@ -86,7 +85,7 @@ class UserMessageBubble extends StatelessWidget {
 
   Widget _buildTimestamp(BuildContext context) {
     return Padding(
-      padding: const EdgeInsetsDirectional.only(top: 4, start: 8),
+      padding: const EdgeInsetsDirectional.only(top: 4, end: 8),
       child: Text(
         _formatTime(transcriptLine.timestamp),
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
