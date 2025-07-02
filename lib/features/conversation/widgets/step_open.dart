@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import '../controller/conversation_flow_controller.dart';
+import '../model/conversation_models.dart';
+import '../components/tina_message_bubble.dart';
+import '../components/user_message_bubble.dart';
+import '../../../core/scripts/conversation_scripts.dart';
 
-/// Opening conversation step - setting task and parameters
+/// Opening conversation step - chat-based setup with Tina
 class StepOpen extends StatefulWidget {
   final ConversationFlowController controller;
 
@@ -15,103 +19,243 @@ class StepOpen extends StatefulWidget {
 }
 
 class _StepOpenState extends State<StepOpen> {
-  final _taskController = TextEditingController();
-  final _additionalInfoController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final _messageController = TextEditingController();
+  final _scrollController = ScrollController();
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize setup on first build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isInitialized) {
+        widget.controller.initializeSetup();
+        _isInitialized = true;
+      }
+    });
+  }
 
   @override
   void dispose() {
-    _taskController.dispose();
-    _additionalInfoController.dispose();
+    _messageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 20),
-            
-            // Header
-            Text(
-              'התחלת שיחה עם טינה',
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
-            
-            const SizedBox(height: 8),
-            Text(
-              'אנא הזן את המשימה שברצונך לבצע',
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            
-            const SizedBox(height: 40),
-            
-            // Task field
-            TextFormField(
-              controller: _taskController,
-              decoration: const InputDecoration(
-                labelText: 'תיאור המשימה *',
-                hintText: 'לדוגמה: אני רוצה לבטל פוליסת ביטוח',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'אנא הזן תיאור משימה';
-                }
-                return null;
-              },
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Additional information
-            TextFormField(
-              controller: _additionalInfoController,
-              decoration: const InputDecoration(
-                labelText: 'מידע נוסף (אופציונלי)',
-                hintText: 'פרטים נוספים שיכולים לעזור',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
-            ),
-            
-            const Spacer(),
-            
-            // Start conversation button
-            ElevatedButton(
-              onPressed: _startConversation,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text(
-                'התחל שיחה',
-                style: TextStyle(fontSize: 18),
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-          ],
-        ),
+    return Scaffold(
+      backgroundColor: Colors.grey.shade50,
+      appBar: _buildAppBar(),
+      body: Column(
+        children: [
+          Expanded(
+            child: _buildMessagesList(),
+          ),
+          _buildMessageInput(),
+        ],
       ),
     );
   }
 
-  void _startConversation() {
-    if (_formKey.currentState?.validate() ?? false) {
-      widget.controller.startConversation(
-        task: _taskController.text.trim(),
-        additionalInfo: _additionalInfoController.text.trim().isEmpty 
-            ? null 
-            : _additionalInfoController.text.trim(),
-      );
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: const Color(0xFF6B73FF),
+      elevation: 1,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      title: Row(
+        children: [
+          Container(
+            width: 35,
+            height: 35,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF9DD5FF), Color(0xFFE8F4FF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Text(
+                'T',
+                style: TextStyle(
+                  color: Color(0xFF6B73FF),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'טינה',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                'מוכנה לעזור',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessagesList() {
+    return ValueListenableBuilder<List<TranscriptLine>>(
+      valueListenable: widget.controller.setupMessages,
+      builder: (context, messages, child) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+
+        return ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(16),
+          itemCount: messages.length,
+          itemBuilder: (context, index) {
+            final message = messages[index];
+            
+            if (message.sender == MessageSender.tina) {
+              return TinaMessageBubble(transcriptLine: message);
+            } else {
+              return UserMessageBubble(transcriptLine: message);
+            }
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildMessageInput() {
+    return ValueListenableBuilder<SetupStep>(
+      valueListenable: widget.controller.setupStep,
+      builder: (context, setupStep, child) {
+        if (setupStep == SetupStep.welcome || setupStep == SetupStep.complete) {
+          return const SizedBox.shrink();
+        }
+
+        return _buildTextInput(setupStep);
+      },
+    );
+  }
+
+  Widget _buildTextInput(SetupStep setupStep) {
+    String hintText = _getHintForStep(setupStep);
+    bool showSkipButton = setupStep == SetupStep.details;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            offset: const Offset(0, -2),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showSkipButton)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _sendMessage(message: 'דלג'),
+                    icon: const Icon(Icons.skip_next, size: 18),
+                    label: const Text(ConversationScripts.skipStep),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _messageController,
+                  decoration: InputDecoration(
+                    hintText: hintText,
+                    hintStyle: TextStyle(color: Colors.grey.shade500),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendMessage(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF6B73FF), Color(0xFF9DD5FF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: _sendMessage,
+                  icon: const Icon(
+                    Icons.send,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getHintForStep(SetupStep step) {
+    return ConversationScripts.getSetupHint(step);
+  }
+
+  void _sendMessage({String? message}) {
+    final messageText = message ?? _messageController.text.trim();
+    if (messageText.isNotEmpty) {
+      widget.controller.handleSetupResponse(messageText);
+      _messageController.clear();
     }
   }
 } 

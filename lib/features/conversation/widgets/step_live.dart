@@ -5,6 +5,7 @@ import '../components/tina_message_bubble.dart';
 import '../components/agent_message_bubble.dart';
 import '../components/user_message_bubble.dart';
 import '../../../core/mock_data/conversation_mock_data.dart';
+import '../../../core/scripts/conversation_scripts.dart';
 
 /// Live conversation - transcript, status, calls
 class StepLive extends StatefulWidget {
@@ -69,7 +70,7 @@ class _StepLiveState extends State<StepLive> {
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
-            child: const Text('סיים שיחה'),
+            child: const Text(ConversationScripts.liveEndButton),
           ),
         ),
       ],
@@ -95,7 +96,7 @@ class _StepLiveState extends State<StepLive> {
           ),
           const SizedBox(width: 8),
           const Text(
-            'שיחה פעילה',
+            ConversationScripts.liveStatusActive,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: Colors.green,

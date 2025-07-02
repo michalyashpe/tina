@@ -6,6 +6,8 @@ class Conversation {
   final String id;
   final String task;
   final String? additionalInfo;
+  final String? contactPhone;
+  final String? identifyingDetails;
   final DateTime startTime;
   final DateTime? endTime;
   final ConversationStatus status;
@@ -14,6 +16,8 @@ class Conversation {
     required this.id,
     required this.task,
     this.additionalInfo,
+    this.contactPhone,
+    this.identifyingDetails,
     required this.startTime,
     this.endTime,
     this.status = ConversationStatus.active,
@@ -23,6 +27,8 @@ class Conversation {
     String? id,
     String? task,
     String? additionalInfo,
+    String? contactPhone,
+    String? identifyingDetails,
     DateTime? startTime,
     DateTime? endTime,
     ConversationStatus? status,
@@ -31,6 +37,8 @@ class Conversation {
       id: id ?? this.id,
       task: task ?? this.task,
       additionalInfo: additionalInfo ?? this.additionalInfo,
+      contactPhone: contactPhone ?? this.contactPhone,
+      identifyingDetails: identifyingDetails ?? this.identifyingDetails,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       status: status ?? this.status,
@@ -43,7 +51,14 @@ class Conversation {
   }
 }
 
-
+/// Setup step within the open conversation flow
+enum SetupStep {
+  welcome,
+  task,
+  contact,
+  details,
+  complete,
+}
 
 class TranscriptLine {
   final String id;

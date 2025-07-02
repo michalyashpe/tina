@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../controller/conversation_flow_controller.dart';
 import '../model/conversation_models.dart';
+import '../../../core/scripts/conversation_scripts.dart';
 
 /// End conversation - status, brief feedback
 class StepEnd extends StatefulWidget {
@@ -77,7 +78,7 @@ class _StepEndState extends State<StepEnd> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'השיחה הסתיימה',
+                      ConversationScripts.endConversationComplete,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: Colors.green,
                         fontWeight: FontWeight.bold,
@@ -88,16 +89,16 @@ class _StepEndState extends State<StepEnd> {
                 
                 const SizedBox(height: 16),
                 
-                _buildSummaryRow('משימה:', conversation.task),
+                _buildSummaryRow(ConversationScripts.taskLabel, conversation.task),
                 
                 if (conversation.duration != null)
                   _buildSummaryRow(
-                    'משך השיחה:', 
+                    ConversationScripts.durationLabel, 
                     '${conversation.duration!.inMinutes}:${(conversation.duration!.inSeconds % 60).toString().padLeft(2, '0')}'
                   ),
                 
                 _buildSummaryRow(
-                  'זמן התחלה:', 
+                  ConversationScripts.startTimeLabel, 
                   '${conversation.startTime.hour.toString().padLeft(2, '0')}:${conversation.startTime.minute.toString().padLeft(2, '0')}'
                 ),
               ],
@@ -137,7 +138,7 @@ class _StepEndState extends State<StepEnd> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'איך היית מדרג את השיחה?',
+          ConversationScripts.ratingQuestion,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         
@@ -168,7 +169,7 @@ class _StepEndState extends State<StepEnd> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'משוב נוסף (אופציונלי)',
+          ConversationScripts.endFeedbackTitle,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         
@@ -177,7 +178,7 @@ class _StepEndState extends State<StepEnd> {
         TextFormField(
           controller: _feedbackController,
           decoration: const InputDecoration(
-            hintText: 'איך נוכל לשפר את השירות?',
+            hintText: ConversationScripts.endFeedbackPlaceholder,
             border: OutlineInputBorder(),
           ),
           maxLines: 3,
@@ -195,7 +196,7 @@ class _StepEndState extends State<StepEnd> {
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
           child: const Text(
-            'שלח משוב',
+            ConversationScripts.endSubmitFeedback,
             style: TextStyle(fontSize: 18),
           ),
         ),
@@ -204,7 +205,7 @@ class _StepEndState extends State<StepEnd> {
         
         TextButton(
           onPressed: widget.controller.resetConversation,
-          child: const Text('התחל שיחה חדשה'),
+          child: const Text(ConversationScripts.endNewConversation),
         ),
         
         const SizedBox(height: 20),
@@ -216,7 +217,7 @@ class _StepEndState extends State<StepEnd> {
     // Here we would send the feedback to the server
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('תודה על המשוב!'),
+        content: Text(ConversationScripts.endFeedbackSuccess),
         backgroundColor: Colors.green,
       ),
     );

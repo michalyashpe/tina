@@ -30,17 +30,23 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('שיחה עם טינה'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: ValueListenableBuilder<ConversationStep>(
-        valueListenable: _controller.currentStep,
-        builder: (context, step, child) {
-          return _buildStepWidget(step);
-        },
-      ),
+    return ValueListenableBuilder<ConversationStep>(
+      valueListenable: _controller.currentStep,
+      builder: (context, step, child) {
+        // StepOpen creates its own Scaffold, so return it directly
+        if (step == ConversationStep.open) {
+          return StepOpen(controller: _controller);
+        }
+
+        // For other steps, wrap in Scaffold with AppBar
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('שיחה עם טינה'),
+            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          ),
+          body: _buildStepWidget(step),
+        );
+      },
     );
   }
 
