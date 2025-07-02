@@ -3,6 +3,7 @@ import '../controller/conversation_flow_controller.dart';
 import '../model/conversation_models.dart';
 import '../components/tina_message_bubble.dart';
 import '../components/user_message_bubble.dart';
+import '../components/tina_avatar.dart';
 import '../../../core/scripts/conversation_scripts.dart';
 
 /// Opening conversation step - chat-based setup with Tina
@@ -68,27 +69,8 @@ class _StepOpenState extends State<StepOpen> {
       ),
       title: Row(
         children: [
-          Container(
-            width: 35,
-            height: 35,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF9DD5FF), Color(0xFFE8F4FF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Text(
-                'T',
-                style: TextStyle(
-                  color: Color(0xFF6B73FF),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
+          const TinaAvatar(
+            size: 35,
           ),
           const SizedBox(width: 12),
           const Column(

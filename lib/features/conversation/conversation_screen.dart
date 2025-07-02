@@ -4,6 +4,7 @@ import 'model/conversation_step.dart';
 import 'widgets/step_open.dart';
 import 'widgets/step_live.dart';
 import 'widgets/step_end.dart';
+import 'components/tina_avatar.dart';
 
 /// Main screen that contains all conversation steps
 class ConversationScreen extends StatefulWidget {
@@ -41,7 +42,13 @@ class _ConversationScreenState extends State<ConversationScreen> {
         // For other steps, wrap in Scaffold with AppBar
         return Scaffold(
           appBar: AppBar(
-            title: const Text('שיחה עם טינה'),
+            title: Row(
+              children: [
+                const TinaAvatar(size: 32),
+                const SizedBox(width: 12),
+                const Text('שיחה עם טינה'),
+              ],
+            ),
             backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           ),
           body: _buildStepWidget(step),

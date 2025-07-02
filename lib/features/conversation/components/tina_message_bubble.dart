@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../model/conversation_models.dart';
+import 'tina_avatar.dart';
 
 /// Tina's chat bubble
 class TinaMessageBubble extends StatelessWidget {
@@ -19,7 +20,7 @@ class TinaMessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Tina's avatar
-          _buildAvatar(),
+          const TinaAvatar(size: 40),
           
           const SizedBox(width: 12),
           
@@ -38,30 +39,7 @@ class TinaMessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6B73FF), Color(0xFF9DD5FF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        shape: BoxShape.circle,
-      ),
-      child: const Center(
-        child: Text(
-          'T',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildMessageBubble(BuildContext context) {
     return Container(
