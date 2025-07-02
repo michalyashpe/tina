@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../../core/services/conversation_service.dart';
 import '../../../core/utils/time_utils.dart';
+import '../../../core/mock_data/conversation_mock_data.dart';
 
 /// Controller for summary screen
 class SummaryController extends ChangeNotifier {
@@ -25,12 +26,7 @@ class SummaryController extends ChangeNotifier {
       _conversation.value = conversation;
       
       // Mock transcript data
-      _transcript.value = [
-        {'sender': 'tina', 'content': 'שלום! איך אני יכולה לעזור?', 'time': DateTime.now().subtract(const Duration(minutes: 30))},
-        {'sender': 'user', 'content': 'אני רוצה לבטל פוליסת ביטוח', 'time': DateTime.now().subtract(const Duration(minutes: 29))},
-        {'sender': 'tina', 'content': 'אני מעבירה אותך לנציג', 'time': DateTime.now().subtract(const Duration(minutes: 28))},
-        {'sender': 'agent', 'content': 'שלום, איך אני יכול לעזור?', 'time': DateTime.now().subtract(const Duration(minutes: 27))},
-      ];
+      _transcript.value = ConversationMockData.getMockTranscript();
       
     } catch (e) {
       debugPrint('Error loading summary: $e');

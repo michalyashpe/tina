@@ -4,6 +4,7 @@ import '../model/conversation_models.dart';
 import '../components/tina_message_bubble.dart';
 import '../components/agent_message_bubble.dart';
 import '../components/user_message_bubble.dart';
+import '../../../core/mock_data/conversation_mock_data.dart';
 
 /// Live conversation - transcript, status, calls
 class StepLive extends StatefulWidget {
@@ -129,34 +130,21 @@ class _StepLiveState extends State<StepLive> {
   }
 
   void _simulateConversation() {
-    // Example conversation simulation
-    Future.delayed(const Duration(seconds: 1), () {
-      widget.controller.addTranscriptLine(
-        TranscriptLine.fromTina('שלום! אני טינה, עוזרת הדיגיטלית. איך אוכל לעזור לך היום?'),
-      );
-      _scrollToBottom();
-    });
-
-    Future.delayed(const Duration(seconds: 3), () {
-      widget.controller.addTranscriptLine(
-        TranscriptLine.fromUser('שלום טינה, אני רוצה לבטל פוליסת ביטוח'),
-      );
-      _scrollToBottom();
-    });
-
-    Future.delayed(const Duration(seconds: 5), () {
-      widget.controller.addTranscriptLine(
-        TranscriptLine.fromTina('בהחלט אוכל לעזור לך. אני מעבירה אותך לנציג שירות מתמחה'),
-      );
-      _scrollToBottom();
-    });
-
-    Future.delayed(const Duration(seconds: 7), () {
-      widget.controller.addTranscriptLine(
-        TranscriptLine.fromAgent('שלום, אני דניאל מצוות שירות הלקוחות. איך אוכל לעזור?'),
-      );
-      _scrollToBottom();
-    });
+    // Use centralized mock conversation simulation
+    final simulationSteps = ConversationMockData.getMockConversationSimulation();
+    
+    for (final step in simulationSteps) {
+      Future.delayed(step.delay, () {
+        final transcriptLine = switch (step.sender) {
+          MessageSender.tina => TranscriptLine.fromTina(step.message),
+          MessageSender.user => TranscriptLine.fromUser(step.message),
+          MessageSender.agent => TranscriptLine.fromAgent(step.message),
+        };
+        
+        widget.controller.addTranscriptLine(transcriptLine);
+        _scrollToBottom();
+      });
+    }
   }
 
   void _scrollToBottom() {

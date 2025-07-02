@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../features/conversation/model/conversation_models.dart';
 import '../models/conversation_status.dart' as core;
+import '../mock_data/conversation_mock_data.dart';
 
 /// Service for managing conversation data and operations
 class ConversationService extends ChangeNotifier {
@@ -35,28 +36,7 @@ class ConversationService extends ChangeNotifier {
       
       // Mock conversations data
       _conversations.clear();
-      _conversations.addAll([
-                 Conversation(
-           id: '1',
-           task: 'בטל פוליסת ביטוח רכב',
-           startTime: DateTime.now().subtract(const Duration(hours: 2)),
-           endTime: DateTime.now().subtract(const Duration(hours: 1, minutes: 30)),
-           status: core.ConversationStatus.completed,
-         ),
-         Conversation(
-           id: '2',
-           task: 'עדכון פרטים אישיים',
-           startTime: DateTime.now().subtract(const Duration(days: 1)),
-           endTime: DateTime.now().subtract(const Duration(days: 1, hours: -1)),
-           status: core.ConversationStatus.completed,
-         ),
-         Conversation(
-           id: '3',
-           task: 'פתיחת תיק תביעה',
-           startTime: DateTime.now().subtract(const Duration(minutes: 30)),
-           status: core.ConversationStatus.active,
-         ),
-      ]);
+      _conversations.addAll(ConversationMockData.getMockConversations());
       
       notifyListeners();
     } catch (e) {
