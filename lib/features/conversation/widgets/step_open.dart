@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../controller/conversation_flow_controller.dart';
 import '../model/conversation_models.dart';
 import '../components/tina_message_bubble.dart';
+import '../components/tina_typing_indicator.dart';
 import '../components/user_message_bubble.dart';
 import '../components/tina_avatar.dart';
 import '../../../core/scripts/conversation_scripts.dart';
@@ -73,11 +74,11 @@ class _StepOpenState extends State<StepOpen> {
             size: 35,
           ),
           const SizedBox(width: 12),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              const Text(
                 'טינה',
                 style: TextStyle(
                   color: Colors.white,
@@ -85,12 +86,17 @@ class _StepOpenState extends State<StepOpen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              Text(
-                'מוכנה לעזור',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
+              ValueListenableBuilder<bool>(
+                valueListenable: widget.controller.isTyping,
+                builder: (context, isTyping, child) {
+                  return Text(
+                    isTyping ? '💬 כותבת...' : 'מוכנה לעזור',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -103,28 +109,42 @@ class _StepOpenState extends State<StepOpen> {
     return ValueListenableBuilder<List<TranscriptLine>>(
       valueListenable: widget.controller.setupMessages,
       builder: (context, messages, child) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients) {
-            _scrollController.animateTo(
-              _scrollController.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            );
-          }
-        });
+        return ValueListenableBuilder<bool>(
+          valueListenable: widget.controller.isTyping,
+          builder: (context, isTyping, child) {
+            print('🎪 Step Open: ValueListenableBuilder rebuild - isTyping: $isTyping'); // Debug log
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_scrollController.hasClients) {
+                _scrollController.animateTo(
+                  _scrollController.position.maxScrollExtent,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
+              }
+            });
 
-        return ListView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(16),
-          itemCount: messages.length,
-          itemBuilder: (context, index) {
-            final message = messages[index];
-            
-            if (message.sender == MessageSender.tina) {
-              return TinaMessageBubble(transcriptLine: message);
-            } else {
-              return UserMessageBubble(transcriptLine: message);
-            }
+            final itemCount = messages.length + (isTyping ? 1 : 0);
+
+            return ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: itemCount,
+              itemBuilder: (context, index) {
+                // Show typing indicator as the last item if typing
+                if (isTyping && index == messages.length) {
+                  print('🎭 Step Open: Rendering typing indicator'); // Debug log
+                  return const TinaTypingIndicator();
+                }
+                
+                final message = messages[index];
+                
+                if (message.sender == MessageSender.tina) {
+                  return TinaMessageBubble(transcriptLine: message);
+                } else {
+                  return UserMessageBubble(transcriptLine: message);
+                }
+              },
+            );
           },
         );
       },
@@ -163,6 +183,7 @@ class _StepOpenState extends State<StepOpen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+
           if (showSkipButton)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),

@@ -13,6 +13,7 @@ class ConversationFlowController {
   final ValueNotifier<SetupStep> _setupStep = ValueNotifier(SetupStep.welcome);
   final ValueNotifier<List<TranscriptLine>> _setupMessages = 
       ValueNotifier(<TranscriptLine>[]);
+  final ValueNotifier<bool> _isTyping = ValueNotifier(false);
 
   // Getters
   ValueListenable<ConversationStep> get currentStep => _currentStep;
@@ -20,12 +21,24 @@ class ConversationFlowController {
   ValueListenable<List<TranscriptLine>> get transcript => _transcript;
   ValueListenable<SetupStep> get setupStep => _setupStep;
   ValueListenable<List<TranscriptLine>> get setupMessages => _setupMessages;
+  ValueListenable<bool> get isTyping => _isTyping;
+
+  /// Show typing indicator
+  void showTypingIndicator() {
+    _isTyping.value = true;
+  }
+
+  /// Hide typing indicator
+  void hideTypingIndicator() {
+    _isTyping.value = false;
+  }
 
   /// Initialize setup with welcome message
   void initializeSetup() {
-    _setupMessages.value = [
-      TranscriptLine.fromTina(ConversationScripts.setupWelcome),
-    ];
+    // Add a small delay to ensure UI is ready, then show typing indicator
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _addSetupMessageWithTyping(ConversationScripts.setupWelcome);
+    });
     _setupStep.value = SetupStep.task;
   }
 
@@ -56,14 +69,14 @@ class ConversationFlowController {
       startTime: DateTime.now(),
     );
 
-    _addSetupMessage(TranscriptLine.fromTina(ConversationScripts.setupContact));
+    _addSetupMessageWithTyping(ConversationScripts.setupContact);
     _setupStep.value = SetupStep.contact;
   }
 
   void _handleContactResponse(String contact) {
     _conversation.value = _conversation.value?.copyWith(contactPhone: contact);
     
-    _addSetupMessage(TranscriptLine.fromTina(ConversationScripts.setupDetails));
+    _addSetupMessageWithTyping(ConversationScripts.setupDetails);
     _setupStep.value = SetupStep.details;
   }
 
@@ -84,7 +97,7 @@ class ConversationFlowController {
       hasDetails: cleanedDetails != null
     );
     
-    _addSetupMessage(TranscriptLine.fromTina(responseMessage));
+    _addSetupMessageWithTyping(responseMessage);
     _setupStep.value = SetupStep.complete;
     
     // Transition to live step after a brief delay
@@ -97,6 +110,16 @@ class ConversationFlowController {
     final currentMessages = List<TranscriptLine>.from(_setupMessages.value);
     currentMessages.add(message);
     _setupMessages.value = currentMessages;
+  }
+
+  /// Add a setup message from Tina with typing indicator
+  void _addSetupMessageWithTyping(String message) {
+    showTypingIndicator();
+    
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      hideTypingIndicator();
+      _addSetupMessage(TranscriptLine.fromTina(message));
+    });
   }
 
   /// Start a new conversation (legacy method for backward compatibility)
@@ -142,5 +165,6 @@ class ConversationFlowController {
     _transcript.dispose();
     _setupStep.dispose();
     _setupMessages.dispose();
+    _isTyping.dispose();
   }
 } 

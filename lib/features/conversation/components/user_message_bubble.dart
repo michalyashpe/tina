@@ -24,7 +24,7 @@ class UserMessageBubble extends StatelessWidget {
 
           // Message bubble
             Expanded(child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildMessageBubble(context),
                 _buildTimestamp(context),

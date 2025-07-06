@@ -46,7 +46,25 @@ class _ConversationScreenState extends State<ConversationScreen> {
               children: [
                 const TinaAvatar(size: 32),
                 const SizedBox(width: 12),
-                const Text('שיחה עם טינה'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('שיחה עם טינה'),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: _controller.isTyping,
+                      builder: (context, isTyping, child) {
+                        return Text(
+                          isTyping ? '💬 כותבת...' : '',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ],
             ),
             backgroundColor: Theme.of(context).colorScheme.inversePrimary,
