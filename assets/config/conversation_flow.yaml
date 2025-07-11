@@ -1,0 +1,65 @@
+# Conversation Flow Configuration
+# This file defines the entire conversation flow for Tina.
+# You can easily modify questions, add new steps, or change the order here.
+
+conversation_flow:
+  steps:
+    - id: welcome
+      question_text: |
+        היי! אני פה לעזור לך עם שיחה.
+        מה המשימה שתרצי שאבצע עבורך היום?
+      hint_text: תיאור המשימה...
+      target_field: task
+      is_optional: false
+      skip_keywords: []
+      next_step_id: contact
+
+    - id: contact
+      question_text: סבבה. עם מי את רוצה שאדבר?
+      hint_text: מספר טלפון או שם איש קשר...
+      target_field: contactPhone
+      is_optional: false
+      skip_keywords: []
+      next_step_id: details
+
+    - id: details
+      question_text: |
+        יש פרטים שיכולים לעזור לי בשיחה?
+        למשל ת״ז, מספר לקוח או פוליסה?
+
+        (אפשר לכתוב 'דלג' אם אין)
+      hint_text: פרטים מזהים (אופציונלי)...
+      target_field: identifyingDetails
+      is_optional: true
+      skip_keywords:
+        - דלג
+        - אין
+        - לא
+      next_step_id: complete
+      completion_messages:
+        with_answer: |
+          מעולה! הפרטים יעזרו לי בשיחה.
+
+          אני מתחילה את השיחה עכשיו...
+        without_answer: |
+          בסדר, נמשיך בלי פרטים נוספים.
+
+          אני מתחילה את השיחה עכשיו...
+
+# Future enhancement: could add conditional flows
+# conditional_flows:
+#   - condition: "answer contains 'דחוף'"
+#     from_step: welcome
+#     to_step: priority_contact
+#   - condition: "answer contains 'טלפון'"
+#     from_step: contact
+#     to_step: phone_verification
+
+# Future enhancement: could add validation rules
+# validation_rules:
+#   - step_id: contact
+#     rule: phone_number
+#     error_message: אנא הזן מספר טלפון תקין
+#   - step_id: task
+#     rule: min_length_5
+#     error_message: אנא הוסף תיאור מפורט יותר 

@@ -36,8 +36,8 @@ class ConversationFlowController {
   }
 
   /// Initialize setup with welcome message
-  void initializeSetup() {
-    final firstStep = ConversationFlowConfig.firstStep;
+  void initializeSetup() async {
+    final firstStep = await ConversationFlowConfig.getFirstStep();
     _currentStepId.value = firstStep.id;
     
     // Add a small delay to ensure UI is ready, then show typing indicator
@@ -47,25 +47,28 @@ class ConversationFlowController {
   }
 
   /// Get current step configuration
-  ConversationStepConfig? get currentStepConfig => 
-      ConversationFlowConfig.getStepById(_currentStepId.value);
+  Future<ConversationStepConfig?> getCurrentStepConfig() async {
+    return await ConversationFlowConfig.getStepById(_currentStepId.value);
+  }
 
   /// Get hint text for current step
-  String getHintText() {
-    return currentStepConfig?.hintText ?? 'הקלד הודעה...';
+  Future<String> getHintText() async {
+    final stepConfig = await getCurrentStepConfig();
+    return stepConfig?.hintText ?? 'הקלד הודעה...';
   }
 
   /// Check if current step should show skip button
-  bool shouldShowSkipButton() {
-    return currentStepConfig?.isOptional ?? false;
+  Future<bool> shouldShowSkipButton() async {
+    final stepConfig = await getCurrentStepConfig();
+    return stepConfig?.isOptional ?? false;
   }
 
   /// Check if setup is complete
   bool get isSetupComplete => _currentStepId.value == 'complete';
 
   /// Handle user response during setup
-  void handleSetupResponse(String response) {
-    final stepConfig = currentStepConfig;
+  void handleSetupResponse(String response) async {
+    final stepConfig = await getCurrentStepConfig();
     if (stepConfig == null) return;
 
     // Add user message
@@ -124,8 +127,8 @@ class ConversationFlowController {
   }
 
   /// Move to next step
-  void _moveToNextStep(String nextStepId, ConversationStepConfig currentStep, String response) {
-    final nextStep = ConversationFlowConfig.getStepById(nextStepId);
+  void _moveToNextStep(String nextStepId, ConversationStepConfig currentStep, String response) async {
+    final nextStep = await ConversationFlowConfig.getStepById(nextStepId);
     if (nextStep == null) return;
 
     _currentStepId.value = nextStepId;

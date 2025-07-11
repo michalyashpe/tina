@@ -1,4 +1,4 @@
-import 'conversation_models.dart';
+import '../services/conversation_flow_loader.dart';
 
 /// Configuration for a single conversation step
 class ConversationStepConfig {
@@ -51,55 +51,41 @@ class ConversationStepConfig {
 
 /// Service class that holds the conversation flow configuration
 class ConversationFlowConfig {
-  static final List<ConversationStepConfig> steps = [
-    ConversationStepConfig(
-      id: 'welcome',
-      questionText: "היי! אני פה לעזור לך עם שיחה.\nמה המשימה שתרצי שאבצע עבורך היום?",
-      hintText: 'תיאור המשימה...',
-      targetField: 'task',
-      nextStepId: 'contact',
-    ),
-    ConversationStepConfig(
-      id: 'contact',
-      questionText: "סבבה. עם מי את רוצה שאדבר?",
-      hintText: 'מספר טלפון או שם איש קשר...',
-      targetField: 'contactPhone',
-      nextStepId: 'details',
-    ),
-    ConversationStepConfig(
-      id: 'details',
-      questionText: "יש פרטים שיכולים לעזור לי בשיחה?\n"
-          "למשל ת״ז, מספר לקוח או פוליסה?\n\n"
-          "(אפשר לכתוב 'דלג' אם אין)",
-      hintText: 'פרטים מזהים (אופציונלי)...',
-      targetField: 'identifyingDetails',
-      isOptional: true,
-      skipKeywords: const ['דלג', 'אין', 'לא'],
-      nextStepId: 'complete',
-      completionMessage: (hasAnswer) => hasAnswer
-          ? "מעולה! הפרטים יעזרו לי בשיחה.\n\n"
-            "אני מתחילה את השיחה עכשיו..."
-          : "בסדר, נמשיך בלי פרטים נוספים.\n\n"
-            "אני מתחילה את השיחה עכשיו...",
-    ),
-  ];
+  static List<ConversationStepConfig>? _steps;
+
+  /// Get conversation steps (loads from YAML if not already loaded)
+  static Future<List<ConversationStepConfig>> getSteps() async {
+    _steps ??= await ConversationFlowLoader.instance.loadConversationFlow();
+    return _steps!;
+  }
+
+  /// Reload steps from YAML file
+  static Future<List<ConversationStepConfig>> reloadSteps() async {
+    _steps = await ConversationFlowLoader.instance.reloadConfiguration();
+    return _steps!;
+  }
 
   /// Get step configuration by ID
-  static ConversationStepConfig? getStepById(String id) {
+  static Future<ConversationStepConfig?> getStepById(String id) async {
+    final steps = await getSteps();
     return steps.where((step) => step.id == id).firstOrNull;
   }
 
   /// Get the first step (welcome)
-  static ConversationStepConfig get firstStep => steps.first;
+  static Future<ConversationStepConfig> getFirstStep() async {
+    final steps = await getSteps();
+    return steps.first;
+  }
 
   /// Get step index by ID
-  static int getStepIndex(String id) {
+  static Future<int> getStepIndex(String id) async {
+    final steps = await getSteps();
     return steps.indexWhere((step) => step.id == id);
   }
 
   /// Get next step configuration
-  static ConversationStepConfig? getNextStep(String currentId, String answer) {
-    final currentStep = getStepById(currentId);
+  static Future<ConversationStepConfig?> getNextStep(String currentId, String answer) async {
+    final currentStep = await getStepById(currentId);
     if (currentStep == null) return null;
 
     final nextId = currentStep.getNextStepId(answer);
@@ -109,7 +95,8 @@ class ConversationFlowConfig {
   }
 
   /// Check if step is the last step
-  static bool isLastStep(String id) {
-    return id == 'complete' || getStepIndex(id) == steps.length - 1;
+  static Future<bool> isLastStep(String id) async {
+    final steps = await getSteps();
+    return id == 'complete' || steps.indexWhere((step) => step.id == id) == steps.length - 1;
   }
 } 

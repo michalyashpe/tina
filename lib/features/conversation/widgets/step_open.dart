@@ -164,8 +164,16 @@ class _StepOpenState extends State<StepOpen> {
   }
 
   Widget _buildTextInput() {
-    String hintText = widget.controller.getHintText();
-    bool showSkipButton = widget.controller.shouldShowSkipButton();
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _getTextInputData(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+        
+        final data = snapshot.data!;
+        final hintText = data['hintText'] as String;
+        final showSkipButton = data['showSkipButton'] as bool;
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -247,6 +255,16 @@ class _StepOpenState extends State<StepOpen> {
         ],
       ),
     );
+      },
+    );
+  }
+
+  /// Get text input data asynchronously
+  Future<Map<String, dynamic>> _getTextInputData() async {
+    return {
+      'hintText': await widget.controller.getHintText(),
+      'showSkipButton': await widget.controller.shouldShowSkipButton(),
+    };
   }
 
   // Removed - now using controller.getHintText()
