@@ -5,7 +5,6 @@ import '../components/tina_message_bubble.dart';
 import '../components/tina_typing_indicator.dart';
 import '../components/user_message_bubble.dart';
 import '../components/tina_avatar.dart';
-import '../../../core/scripts/conversation_scripts.dart';
 
 /// Opening conversation step - chat-based setup with Tina
 class StepOpen extends StatefulWidget {
@@ -152,21 +151,21 @@ class _StepOpenState extends State<StepOpen> {
   }
 
   Widget _buildMessageInput() {
-    return ValueListenableBuilder<SetupStep>(
-      valueListenable: widget.controller.setupStep,
-      builder: (context, setupStep, child) {
-        if (setupStep == SetupStep.welcome || setupStep == SetupStep.complete) {
-          return const SizedBox.shrink();
+    return ValueListenableBuilder<String>(
+      valueListenable: widget.controller.currentStepId,
+      builder: (context, stepId, child) {
+        if (stepId == 'welcome' || stepId == 'complete') {
+          // return const SizedBox.shrink();
         }
 
-        return _buildTextInput(setupStep);
+        return _buildTextInput();
       },
     );
   }
 
-  Widget _buildTextInput(SetupStep setupStep) {
-    String hintText = _getHintForStep(setupStep);
-    bool showSkipButton = setupStep == SetupStep.details;
+  Widget _buildTextInput() {
+    String hintText = widget.controller.getHintText();
+    bool showSkipButton = widget.controller.shouldShowSkipButton();
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -193,7 +192,7 @@ class _StepOpenState extends State<StepOpen> {
                   TextButton.icon(
                     onPressed: () => _sendMessage(message: 'דלג'),
                     icon: const Icon(Icons.skip_next, size: 18),
-                    label: const Text(ConversationScripts.skipStep),
+                    label: const Text('דלג על השלב'),
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.grey.shade600,
                     ),
@@ -250,9 +249,7 @@ class _StepOpenState extends State<StepOpen> {
     );
   }
 
-  String _getHintForStep(SetupStep step) {
-    return ConversationScripts.getSetupHint(step);
-  }
+  // Removed - now using controller.getHintText()
 
   void _sendMessage({String? message}) {
     final messageText = message ?? _messageController.text.trim();

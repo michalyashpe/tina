@@ -51,14 +51,7 @@ class Conversation {
   }
 }
 
-/// Setup step within the open conversation flow
-enum SetupStep {
-  welcome,
-  task,
-  contact,
-  details,
-  complete,
-}
+// SetupStep enum removed - now using configuration-driven approach with string IDs
 
 class TranscriptLine {
   final String id;

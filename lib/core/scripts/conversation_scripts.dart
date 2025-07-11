@@ -1,4 +1,4 @@
-import '../../features/conversation/model/conversation_models.dart';
+// Import removed - no longer using SetupStep enum
 
 /// Centralized conversation scripts for consistent messaging
 /// 
@@ -11,18 +11,18 @@ class ConversationScripts {
   // =============================================================================
   
   /// Welcome message when starting conversation setup
-  static const String setupWelcome = 
-      "היי! אני פה לעזור לך עם שיחה.\nמה המשימה שתרצי שאבצע עבורך היום?";
+  // static const String setupWelcome = 
+  //     "היי! אני פה לעזור לך עם שיחה.\nמה המשימה שתרצי שאבצע עבורך היום?";
   
   /// Request for contact information after task is provided
-  static const String setupContact = 
-      "סבבה. עם מי את רוצה שאדבר?";
+  // static const String setupContact = 
+  //     "סבבה. עם מי את רוצה שאדבר?";
   
   /// Request for identifying details
-  static const String setupDetails = 
-      "יש פרטים שיכולים לעזור לי בשיחה?\n"
-      "למשל ת״ז, מספר לקוח או פוליסה?\n\n"
-      "(אפשר לכתוב 'דלג' אם אין)";
+  // static const String setupDetails = 
+  //     "יש פרטים שיכולים לעזור לי בשיחה?\n"
+  //     "למשל ת״ז, מספר לקוח או פוליסה?\n\n"
+  //     "(אפשר לכתוב 'דלג' אם אין)";
   
   /// Completion message when details are provided
   static const String setupCompleteWithDetails = 
@@ -70,19 +70,7 @@ class ConversationScripts {
   // UI HINTS AND PLACEHOLDERS
   // =============================================================================
   
-  /// Input hints for different setup steps
-  static String getSetupHint(SetupStep step) {
-    switch (step) {
-      case SetupStep.task:
-        return 'תיאור המשימה...';
-      case SetupStep.contact:
-        return 'מספר טלפון או שם איש קשר...';
-      case SetupStep.details:
-        return 'פרטים מזהים (אופציונלי)...';
-      default:
-        return 'הקלד הודעה...';
-    }
-  }
+  // getSetupHint method removed - now handled by configuration-driven approach
   
   /// Skip step button text
   static const String skipStep = "דלג על השלב";

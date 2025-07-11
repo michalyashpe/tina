@@ -1,16 +1,16 @@
 import 'package:flutter/foundation.dart';
 import '../model/conversation_step.dart';
 import '../model/conversation_models.dart';
-import '../../../core/scripts/conversation_scripts.dart';
+import '../model/conversation_flow_config.dart';
 
-/// Manages conversation state and flow between steps
+/// Manages conversation state and flow between steps using configuration
 class ConversationFlowController {
   final ValueNotifier<ConversationStep> _currentStep = 
       ValueNotifier(ConversationStep.open);
   final ValueNotifier<Conversation?> _conversation = ValueNotifier(null);
   final ValueNotifier<List<TranscriptLine>> _transcript = 
       ValueNotifier(<TranscriptLine>[]);
-  final ValueNotifier<SetupStep> _setupStep = ValueNotifier(SetupStep.welcome);
+  final ValueNotifier<String> _currentStepId = ValueNotifier('welcome');
   final ValueNotifier<List<TranscriptLine>> _setupMessages = 
       ValueNotifier(<TranscriptLine>[]);
   final ValueNotifier<bool> _isTyping = ValueNotifier(false);
@@ -19,86 +19,129 @@ class ConversationFlowController {
   ValueListenable<ConversationStep> get currentStep => _currentStep;
   ValueListenable<Conversation?> get conversation => _conversation;
   ValueListenable<List<TranscriptLine>> get transcript => _transcript;
-  ValueListenable<SetupStep> get setupStep => _setupStep;
+  ValueListenable<String> get currentStepId => _currentStepId;
   ValueListenable<List<TranscriptLine>> get setupMessages => _setupMessages;
   ValueListenable<bool> get isTyping => _isTyping;
 
   /// Show typing indicator
   void showTypingIndicator() {
+    print('🟢 Setting typing to true');
     _isTyping.value = true;
   }
 
   /// Hide typing indicator
   void hideTypingIndicator() {
+    print('🔴 Setting typing to false');
     _isTyping.value = false;
   }
 
   /// Initialize setup with welcome message
   void initializeSetup() {
+    final firstStep = ConversationFlowConfig.firstStep;
+    _currentStepId.value = firstStep.id;
+    
     // Add a small delay to ensure UI is ready, then show typing indicator
     Future.delayed(const Duration(milliseconds: 500), () {
-      _addSetupMessageWithTyping(ConversationScripts.setupWelcome);
+      _addSetupMessageWithTyping(firstStep.questionText);
     });
-    _setupStep.value = SetupStep.task;
   }
+
+  /// Get current step configuration
+  ConversationStepConfig? get currentStepConfig => 
+      ConversationFlowConfig.getStepById(_currentStepId.value);
+
+  /// Get hint text for current step
+  String getHintText() {
+    return currentStepConfig?.hintText ?? 'הקלד הודעה...';
+  }
+
+  /// Check if current step should show skip button
+  bool shouldShowSkipButton() {
+    return currentStepConfig?.isOptional ?? false;
+  }
+
+  /// Check if setup is complete
+  bool get isSetupComplete => _currentStepId.value == 'complete';
 
   /// Handle user response during setup
   void handleSetupResponse(String response) {
+    final stepConfig = currentStepConfig;
+    if (stepConfig == null) return;
+
     // Add user message
     _addSetupMessage(TranscriptLine.fromUser(response));
 
-    switch (_setupStep.value) {
-      case SetupStep.task:
-        _handleTaskResponse(response);
+    // Validate response
+    final validationError = stepConfig.validateAnswer(response);
+    if (validationError != null) {
+      _addSetupMessageWithTyping(validationError);
+      return;
+    }
+
+    // Update conversation data
+    _updateConversationField(stepConfig.targetField, response, stepConfig);
+
+    // Get next step
+    final nextStepId = stepConfig.getNextStepId(response);
+    if (nextStepId == null || nextStepId == 'complete') {
+      _completeSetup(stepConfig, response);
+      return;
+    }
+
+    // Move to next step
+    _moveToNextStep(nextStepId, stepConfig, response);
+  }
+
+  /// Update conversation field based on step configuration
+  void _updateConversationField(String fieldName, String value, ConversationStepConfig stepConfig) {
+    final currentConversation = _conversation.value;
+    
+    // Clean the value if it should be skipped
+    String? cleanedValue;
+    if (!stepConfig.shouldSkip(value)) {
+      cleanedValue = value;
+    }
+
+    switch (fieldName) {
+      case 'task':
+        _conversation.value = Conversation(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          task: cleanedValue ?? '',
+          startTime: DateTime.now(),
+        );
         break;
-      case SetupStep.contact:
-        _handleContactResponse(response);
+      case 'contactPhone':
+        _conversation.value = currentConversation?.copyWith(
+          contactPhone: cleanedValue
+        );
         break;
-      case SetupStep.details:
-        _handleDetailsResponse(response);
-        break;
-      default:
+      case 'identifyingDetails':
+        _conversation.value = currentConversation?.copyWith(
+          identifyingDetails: cleanedValue
+        );
         break;
     }
   }
 
-  void _handleTaskResponse(String task) {
-    _conversation.value = Conversation(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      task: task,
-      startTime: DateTime.now(),
-    );
+  /// Move to next step
+  void _moveToNextStep(String nextStepId, ConversationStepConfig currentStep, String response) {
+    final nextStep = ConversationFlowConfig.getStepById(nextStepId);
+    if (nextStep == null) return;
 
-    _addSetupMessageWithTyping(ConversationScripts.setupContact);
-    _setupStep.value = SetupStep.contact;
+    _currentStepId.value = nextStepId;
+    _addSetupMessageWithTyping(nextStep.questionText);
   }
 
-  void _handleContactResponse(String contact) {
-    _conversation.value = _conversation.value?.copyWith(contactPhone: contact);
+  /// Complete setup phase
+  void _completeSetup(ConversationStepConfig stepConfig, String response) {
+    final hasAnswer = !stepConfig.shouldSkip(response);
+    final completionMessage = stepConfig.getCompletionMessage(hasAnswer);
     
-    _addSetupMessageWithTyping(ConversationScripts.setupDetails);
-    _setupStep.value = SetupStep.details;
-  }
-
-  void _handleDetailsResponse(String details) {
-    String? cleanedDetails;
-    final skipKeywords = ConversationScripts.getSkipKeywords();
-    
-    if (details.isNotEmpty && 
-        !skipKeywords.any((keyword) => details.toLowerCase().contains(keyword))) {
-      cleanedDetails = details;
+    if (completionMessage != null) {
+      _addSetupMessageWithTyping(completionMessage);
     }
-
-    _conversation.value = _conversation.value?.copyWith(
-      identifyingDetails: cleanedDetails
-    );
     
-    String responseMessage = ConversationScripts.getSetupCompletionMessage(
-      hasDetails: cleanedDetails != null
-    );
-    
-    _addSetupMessageWithTyping(responseMessage);
-    _setupStep.value = SetupStep.complete;
+    _currentStepId.value = 'complete';
     
     // Transition to live step after a brief delay
     Future.delayed(const Duration(seconds: 2), () {
@@ -106,6 +149,7 @@ class ConversationFlowController {
     });
   }
 
+  /// Add a setup message
   void _addSetupMessage(TranscriptLine message) {
     final currentMessages = List<TranscriptLine>.from(_setupMessages.value);
     currentMessages.add(message);
@@ -114,23 +158,14 @@ class ConversationFlowController {
 
   /// Add a setup message from Tina with typing indicator
   void _addSetupMessageWithTyping(String message) {
+    print('🔄 Showing typing indicator');
     showTypingIndicator();
     
     Future.delayed(const Duration(milliseconds: 1500), () {
+      print('✅ Hiding typing indicator and showing message');
       hideTypingIndicator();
       _addSetupMessage(TranscriptLine.fromTina(message));
     });
-  }
-
-  /// Start a new conversation (legacy method for backward compatibility)
-  void startConversation({required String task, String? additionalInfo}) {
-    _conversation.value = Conversation(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      task: task,
-      additionalInfo: additionalInfo,
-      startTime: DateTime.now(),
-    );
-    _currentStep.value = ConversationStep.live;
   }
 
   /// Add a line to the transcript
@@ -155,7 +190,7 @@ class ConversationFlowController {
     _conversation.value = null;
     _transcript.value = <TranscriptLine>[];
     _setupMessages.value = <TranscriptLine>[];
-    _setupStep.value = SetupStep.welcome;
+    _currentStepId.value = 'welcome';
     _currentStep.value = ConversationStep.open;
   }
 
@@ -163,7 +198,7 @@ class ConversationFlowController {
     _currentStep.dispose();
     _conversation.dispose();
     _transcript.dispose();
-    _setupStep.dispose();
+    _currentStepId.dispose();
     _setupMessages.dispose();
     _isTyping.dispose();
   }
