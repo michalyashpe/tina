@@ -1,6 +1,7 @@
 # Conversation Flow Configuration
 # This file defines the entire conversation flow for Tina.
 # You can easily modify questions, add new steps, or change the order here.
+# run dart scripts/validate_conversation_flow.dart for validation
 
 conversation_flow:
   steps:

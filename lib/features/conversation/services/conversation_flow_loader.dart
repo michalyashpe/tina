@@ -2,6 +2,15 @@ import 'package:flutter/services.dart';
 import 'package:yaml/yaml.dart';
 import '../model/conversation_flow_config.dart';
 
+/// Exception thrown when there's an error in conversation flow configuration
+class ConversationFlowException implements Exception {
+  final String message;
+  const ConversationFlowException(this.message);
+  
+  @override
+  String toString() => 'ConversationFlowException: $message';
+}
+
 /// Service for loading conversation flow configuration from YAML
 class ConversationFlowLoader {
   static ConversationFlowLoader? _instance;
@@ -26,36 +35,97 @@ class ConversationFlowLoader {
       final yamlString = await rootBundle.loadString('assets/config/conversation_flow.yaml');
       
       // Parse YAML
-      final yamlMap = loadYaml(yamlString) as Map;
-      final conversationFlow = yamlMap['conversation_flow'] as Map;
-      final stepsData = conversationFlow['steps'] as List;
+      final yamlMap = loadYaml(yamlString);
+      if (yamlMap is! Map) {
+        throw ConversationFlowException('YAML root must be a Map, got ${yamlMap.runtimeType}');
+      }
+      
+      final conversationFlow = yamlMap['conversation_flow'];
+      if (conversationFlow is! Map) {
+        throw ConversationFlowException('conversation_flow must be a Map, got ${conversationFlow.runtimeType}');
+      }
+      
+      final stepsData = conversationFlow['steps'];
+      if (stepsData is! List) {
+        throw ConversationFlowException('steps must be a List, got ${stepsData.runtimeType}');
+      }
 
       // Convert to ConversationStepConfig objects
       _cachedSteps = stepsData.map((stepData) => _parseStepConfig(stepData)).toList();
+      
+      // Validate the loaded configuration
+      _validateConfiguration(_cachedSteps!);
       
       print('📄 Loaded ${_cachedSteps!.length} conversation steps from YAML');
       return _cachedSteps!;
       
     } catch (e) {
-      print('❌ Error loading conversation flow from YAML: $e');
-      
-      // Return fallback configuration if YAML loading fails
-      return _getFallbackConfiguration();
+      if (e is ConversationFlowException) {
+        rethrow;
+      }
+      throw ConversationFlowException('Failed to load conversation flow: $e');
     }
   }
 
   /// Parse individual step configuration from YAML
   ConversationStepConfig _parseStepConfig(dynamic stepData) {
-    final step = stepData as Map;
+    if (stepData is! Map) {
+      throw ConversationFlowException('Step data must be a Map, got ${stepData.runtimeType}');
+    }
+    
+    final step = stepData;
+    
+    // Validate required fields
+    final id = step['id'];
+    if (id is! String || id.isEmpty) {
+      throw ConversationFlowException('Step must have a non-empty string id');
+    }
+    
+    final questionText = step['question_text'];
+    if (questionText is! String || questionText.isEmpty) {
+      throw ConversationFlowException('Step $id must have non-empty question_text');
+    }
+    
+    final targetField = step['target_field'];
+    if (targetField is! String || targetField.isEmpty) {
+      throw ConversationFlowException('Step $id must have non-empty target_field');
+    }
+    
+    // Validate target field values
+    const validTargetFields = ['task', 'contactPhone', 'identifyingDetails'];
+    if (!validTargetFields.contains(targetField)) {
+      throw ConversationFlowException('Step $id has invalid target_field: $targetField. Must be one of: $validTargetFields');
+    }
+    
+    // Validate optional fields
+    final hintText = step['hint_text'];
+    if (hintText != null && hintText is! String) {
+      throw ConversationFlowException('Step $id hint_text must be a string if provided');
+    }
+    
+    final isOptional = step['is_optional'];
+    if (isOptional != null && isOptional is! bool) {
+      throw ConversationFlowException('Step $id is_optional must be a boolean if provided');
+    }
+    
+    final skipKeywords = step['skip_keywords'];
+    if (skipKeywords != null && skipKeywords is! List) {
+      throw ConversationFlowException('Step $id skip_keywords must be a list if provided');
+    }
+    
+    final nextStepId = step['next_step_id'];
+    if (nextStepId != null && nextStepId is! String) {
+      throw ConversationFlowException('Step $id next_step_id must be a string if provided');
+    }
     
     return ConversationStepConfig(
-      id: step['id'] as String,
-      questionText: step['question_text'] as String,
-      hintText: step['hint_text'] as String?,
-      targetField: step['target_field'] as String,
-      isOptional: step['is_optional'] as bool? ?? false,
-      skipKeywords: (step['skip_keywords'] as List?)?.cast<String>() ?? const [],
-      nextStepId: step['next_step_id'] as String?,
+      id: id,
+      questionText: questionText,
+      hintText: hintText,
+      targetField: targetField,
+      isOptional: isOptional ?? false,
+      skipKeywords: skipKeywords?.cast<String>() ?? const [],
+      nextStepId: nextStepId,
       completionMessage: _parseCompletionMessage(step['completion_messages']),
     );
   }
@@ -73,42 +143,71 @@ class ConversationFlowLoader {
     return (bool hasAnswer) => hasAnswer ? withAnswer : withoutAnswer;
   }
 
-  /// Fallback configuration in case YAML loading fails
-  List<ConversationStepConfig> _getFallbackConfiguration() {
-    print('⚠️ Using fallback conversation configuration');
+  /// Validate the loaded configuration for logical consistency
+  void _validateConfiguration(List<ConversationStepConfig> steps) {
+    if (steps.isEmpty) {
+      throw ConversationFlowException('Configuration must contain at least one step');
+    }
     
-    return [
-      ConversationStepConfig(
-        id: 'welcome',
-        questionText: "היי! אני פה לעזור לך עם שיחה.\nמה המשימה שתרצי שאבצע עבורך היום?",
-        hintText: 'תיאור המשימה...',
-        targetField: 'task',
-        nextStepId: 'contact',
-      ),
-      ConversationStepConfig(
-        id: 'contact',
-        questionText: "סבבה. עם מי את רוצה שאדבר?",
-        hintText: 'מספר טלפון או שם איש קשר...',
-        targetField: 'contactPhone',
-        nextStepId: 'details',
-      ),
-      ConversationStepConfig(
-        id: 'details',
-        questionText: "יש פרטים שיכולים לעזור לי בשיחה?\n"
-            "למשל ת״ז, מספר לקוח או פוליסה?\n\n"
-            "(אפשר לכתוב 'דלג' אם אין)",
-        hintText: 'פרטים מזהים (אופציונלי)...',
-        targetField: 'identifyingDetails',
-        isOptional: true,
-        skipKeywords: const ['דלג', 'אין', 'לא'],
-        nextStepId: 'complete',
-        completionMessage: (hasAnswer) => hasAnswer
-            ? "מעולה! הפרטים יעזרו לי בשיחה.\n\n"
-              "אני מתחילה את השיחה עכשיו..."
-            : "בסדר, נמשיך בלי פרטים נוספים.\n\n"
-              "אני מתחילה את השיחה עכשיו...",
-      ),
-    ];
+    // Check for required steps
+    final stepIds = steps.map((s) => s.id).toSet();
+    if (!stepIds.contains('welcome')) {
+      throw ConversationFlowException('Configuration must contain a welcome step');
+    }
+    
+    // Check for duplicate IDs
+    final duplicateIds = <String>[];
+    final seenIds = <String>{};
+    for (final step in steps) {
+      if (seenIds.contains(step.id)) {
+        duplicateIds.add(step.id);
+      }
+      seenIds.add(step.id);
+    }
+    if (duplicateIds.isNotEmpty) {
+      throw ConversationFlowException('Duplicate step IDs found: $duplicateIds');
+    }
+    
+    // Validate flow consistency
+    for (final step in steps) {
+      if (step.nextStepId != null && 
+          step.nextStepId != 'complete' && 
+          !stepIds.contains(step.nextStepId!)) {
+        throw ConversationFlowException('Step ${step.id} references non-existent step: ${step.nextStepId}');
+      }
+    }
+    
+    // Check for circular references
+    _validateNoCircularReferences(steps);
+    
+    // Validate optional steps have skip keywords
+    for (final step in steps) {
+      if (step.isOptional && step.skipKeywords.isEmpty) {
+        throw ConversationFlowException('Optional step ${step.id} must have skip keywords');
+      }
+    }
+  }
+  
+  /// Validate there are no circular references in the flow
+  void _validateNoCircularReferences(List<ConversationStepConfig> steps) {
+    final stepMap = {for (final step in steps) step.id: step};
+    
+    for (final startStep in steps) {
+      final visited = <String>{};
+      var currentId = startStep.id;
+      
+      while (currentId != 'complete' && currentId.isNotEmpty) {
+        if (visited.contains(currentId)) {
+          throw ConversationFlowException('Circular reference detected starting from step: ${startStep.id}');
+        }
+        
+        visited.add(currentId);
+        final currentStep = stepMap[currentId];
+        if (currentStep == null) break;
+        
+        currentId = currentStep.nextStepId ?? 'complete';
+      }
+    }
   }
 
   /// Clear cache - useful for testing or reloading configuration
