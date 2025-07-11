@@ -1,15 +1,15 @@
 # Conversation Flow Configuration Guide
 
-This guide explains how to modify and maintain the conversation flow in Tina using the YAML-driven configuration system.
+This guide explains how to modify and maintain the conversation flow in Tina using the Dart-driven configuration system.
 
 ## 📁 File Structure
 
 ```
-assets/config/
-├── conversation_flow.yaml     # Main configuration file
+lib/config/
+├── conversation_flow_data.dart    # Main configuration file
 lib/features/conversation/
 ├── services/
-│   └── conversation_flow_loader.dart    # Loads YAML configuration
+│   └── conversation_flow_loader.dart    # Loads Dart configuration
 ├── model/
 │   └── conversation_flow_config.dart    # Configuration access
 scripts/
@@ -22,44 +22,48 @@ test/
 
 ### Modifying Questions
 
-1. **Edit the YAML file**: `assets/config/conversation_flow.yaml`
+1. **Edit the Dart file**: `lib/config/conversation_flow_data.dart`
 2. **Validate changes**: `dart scripts/validate_conversation_flow.dart`
 3. **Run tests**: `flutter test test/conversation_flow_test.dart`
 4. **Hot reload**: Your changes will be reflected immediately!
 
 ### Example: Changing a Question
 
-```yaml
-# Before
-- id: welcome
-  question_text: היי! אני פה לעזור לך עם שיחה.
+```dart
+// Before
+{
+  'id': 'welcome',
+  'question_text': 'היי! אני פה לעזור לך עם שיחה.',
+  // ... other fields
+}
 
-# After  
-- id: welcome
-  question_text: שלום! איך אוכל לעזור לך היום?
+// After  
+{
+  'id': 'welcome',
+  'question_text': 'שלום! איך אוכל לעזור לך היום?',
+  // ... other fields
+}
 ```
 
-## 📝 YAML Configuration Reference
+## 📝 Dart Configuration Reference
 
 ### Basic Step Structure
 
-```yaml
-conversation_flow:
-  steps:
-    - id: step_name                    # Unique identifier
-      question_text: |                 # The question to ask
-        Multi-line text
-        is supported
-      hint_text: Input placeholder     # Optional
-      target_field: fieldName          # Where to store answer
-      is_optional: false               # Can user skip?
-      skip_keywords:                   # Words that trigger skip
-        - דלג
-        - אין
-      next_step_id: next_step          # Next step in flow
-      completion_messages:             # Optional final messages
-        with_answer: Thanks message
-        without_answer: Default message
+```dart
+{
+  'id': 'step_name',                    // Unique identifier
+  'question_text': '''Multi-line text  // The question to ask
+is supported using triple quotes''',
+  'hint_text': 'Input placeholder',     // Optional
+  'target_field': 'fieldName',          // Where to store answer
+  'is_optional': false,                 // Can user skip?
+  'skip_keywords': ['דלג', 'אין'],      // Words that trigger skip
+  'next_step_id': 'next_step',          // Next step in flow
+  'completion_messages': {              // Optional final messages
+    'with_answer': 'Thanks message',
+    'without_answer': 'Default message',
+  },
+}
 ```
 
 ### Required Fields

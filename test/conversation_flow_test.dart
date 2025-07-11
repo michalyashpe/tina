@@ -1,14 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/services.dart';
-import 'package:yaml/yaml.dart';
 import 'package:tina/features/conversation/services/conversation_flow_loader.dart';
 import 'package:tina/features/conversation/model/conversation_flow_config.dart';
+import 'package:tina/config/conversation_flow_data.dart';
 
 void main() {
   // Initialize the binding for tests
   TestWidgetsFlutterBinding.ensureInitialized();
   
-  group('Conversation Flow YAML Tests', () {
+  group('Conversation Flow Dart Configuration Tests', () {
     late ConversationFlowLoader loader;
 
     setUp(() {
@@ -16,22 +15,23 @@ void main() {
       loader.clearCache(); // Clear cache before each test
     });
 
-    group('YAML File Loading', () {
-      test('should load YAML file without errors', () async {
-        expect(() async {
-          await rootBundle.loadString('assets/config/conversation_flow.yaml');
-        }, returnsNormally);
+    group('Dart Configuration Loading', () {
+      test('should load Dart configuration without errors', () async {
+        expect(() => ConversationFlowData.steps, returnsNormally);
       });
 
-      test('should parse YAML into valid structure', () async {
-        final yamlString = await rootBundle.loadString('assets/config/conversation_flow.yaml');
+      test('should have valid configuration structure', () async {
+        final stepsData = ConversationFlowData.steps;
         
-        expect(() {
-          final yamlMap = loadYaml(yamlString);
-          expect(yamlMap, isA<Map>());
-          expect(yamlMap['conversation_flow'], isNotNull);
-          expect(yamlMap['conversation_flow']['steps'], isA<List>());
-        }, returnsNormally);
+        expect(stepsData, isA<List<Map<String, dynamic>>>());
+        expect(stepsData, isNotEmpty);
+        
+        // Verify each step has required fields
+        for (final step in stepsData) {
+          expect(step, containsPair('id', isA<String>()));
+          expect(step, containsPair('question_text', isA<String>()));
+          expect(step, containsPair('target_field', isA<String>()));
+        }
       });
     });
 
@@ -196,11 +196,10 @@ void main() {
     });
 
     group('Error Handling Tests', () {
-      test('should handle malformed YAML gracefully', () async {
-        // This test verifies the fallback mechanism works
-        // In a real scenario, you might mock the asset loading to return invalid YAML
+      test('should handle configuration loading gracefully', () async {
+        // This test verifies the configuration loading works correctly
+        // With Dart configuration, we have compile-time safety
         
-        // For now, we ensure the current YAML is valid
         final steps = await loader.loadConversationFlow();
         expect(steps, isNotEmpty);
       });

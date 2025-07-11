@@ -37,8 +37,14 @@ class ConversationFlowController {
 
   /// Initialize setup with welcome message
   void initializeSetup() async {
+    // Reload configuration from Dart file to ensure fresh data
+    print('🔄 Reloading conversation flow configuration from Dart...');
+    await ConversationFlowConfig.reloadSteps();
+    
     final firstStep = await ConversationFlowConfig.getFirstStep();
     _currentStepId.value = firstStep.id;
+    
+    print('📄 Using fresh configuration - first step: ${firstStep.id}');
     
     // Add a small delay to ensure UI is ready, then show typing indicator
     Future.delayed(const Duration(milliseconds: 500), () {
@@ -189,12 +195,16 @@ class ConversationFlowController {
   }
 
   /// Start new conversation (reset)
-  void resetConversation() {
+  void resetConversation() async {
     _conversation.value = null;
     _transcript.value = <TranscriptLine>[];
     _setupMessages.value = <TranscriptLine>[];
     _currentStepId.value = 'welcome';
     _currentStep.value = ConversationStep.open;
+    
+    // Reload configuration to ensure fresh data for new conversation
+    print('🔄 Reloading conversation flow configuration for new conversation...');
+    await ConversationFlowConfig.reloadSteps();
   }
 
   void dispose() {

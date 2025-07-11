@@ -29,10 +29,10 @@ class _StepOpenState extends State<StepOpen> {
     super.initState();
     // Initialize setup on first build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isInitialized) {
+      // if (!_isInitialized) {
         widget.controller.initializeSetup();
         _isInitialized = true;
-      }
+      // }
     });
   }
 

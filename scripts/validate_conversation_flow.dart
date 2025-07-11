@@ -1,29 +1,21 @@
 #!/usr/bin/env dart
 
 import 'dart:io';
-import 'package:yaml/yaml.dart';
+import '../lib/config/conversation_flow_data.dart';
 
-/// Script to validate conversation flow YAML configuration
+/// Script to validate conversation flow Dart configuration
 /// Run with: dart scripts/validate_conversation_flow.dart
 
 void main() async {
   print('🔍 Validating conversation flow configuration...\n');
 
   try {
-    // Read YAML file
-    final yamlFile = File('assets/config/conversation_flow.yaml');
-    if (!yamlFile.existsSync()) {
-      throw ValidationException('❌ YAML file not found: assets/config/conversation_flow.yaml');
-    }
+    // Read Dart configuration
+    print('📁 Loading conversation flow from Dart configuration...');
+    final stepsData = ConversationFlowData.steps;
 
-    final yamlContent = await yamlFile.readAsString();
-    final yamlData = loadYaml(yamlContent);
-
-    // Validate structure
-    _validateStructure(yamlData);
-    
     // Parse and validate steps
-    final steps = _parseSteps(yamlData);
+    final steps = _parseStepsFromDart(stepsData);
     _validateSteps(steps);
     _validateFlow(steps);
 
@@ -60,6 +52,17 @@ void _validateStructure(dynamic yamlData) {
   if (conversationFlow['steps'] is! List) {
     throw ValidationException('conversation_flow.steps must be a List');
   }
+}
+
+List<StepData> _parseStepsFromDart(List<Map<String, dynamic>> stepsData) {
+  final steps = <StepData>[];
+
+  for (int i = 0; i < stepsData.length; i++) {
+    final stepData = stepsData[i];
+    steps.add(StepData.fromMap(stepData, i));
+  }
+
+  return steps;
 }
 
 List<StepData> _parseSteps(Map yamlData) {

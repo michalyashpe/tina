@@ -53,13 +53,13 @@ class ConversationStepConfig {
 class ConversationFlowConfig {
   static List<ConversationStepConfig>? _steps;
 
-  /// Get conversation steps (loads from YAML if not already loaded)
+  /// Get conversation steps (loads from Dart data if not already loaded)
   static Future<List<ConversationStepConfig>> getSteps() async {
     _steps ??= await ConversationFlowLoader.instance.loadConversationFlow();
     return _steps!;
   }
 
-  /// Reload steps from YAML file
+  /// Reload steps from Dart data
   static Future<List<ConversationStepConfig>> reloadSteps() async {
     _steps = await ConversationFlowLoader.instance.reloadConfiguration();
     return _steps!;

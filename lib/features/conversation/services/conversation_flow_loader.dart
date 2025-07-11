@@ -1,6 +1,5 @@
-import 'package:flutter/services.dart';
-import 'package:yaml/yaml.dart';
 import '../model/conversation_flow_config.dart';
+import '../../../config/conversation_flow_data.dart';
 
 /// Exception thrown when there's an error in conversation flow configuration
 class ConversationFlowException implements Exception {
@@ -11,7 +10,7 @@ class ConversationFlowException implements Exception {
   String toString() => 'ConversationFlowException: $message';
 }
 
-/// Service for loading conversation flow configuration from YAML
+/// Service for loading conversation flow configuration from Dart data
 class ConversationFlowLoader {
   static ConversationFlowLoader? _instance;
   List<ConversationStepConfig>? _cachedSteps;
@@ -23,31 +22,26 @@ class ConversationFlowLoader {
     return _instance!;
   }
 
-  /// Load conversation flow from YAML file
+  /// Load conversation flow from Dart configuration
   Future<List<ConversationStepConfig>> loadConversationFlow() async {
     // Return cached steps if already loaded
     if (_cachedSteps != null) {
+      print('📋 Returning cached conversation flow steps');
       return _cachedSteps!;
     }
 
     try {
-      // Load YAML file from assets
-      final yamlString = await rootBundle.loadString('assets/config/conversation_flow.yaml');
+      // Load steps from Dart configuration
+      print('📁 Loading conversation flow from Dart configuration...');
+      final stepsData = ConversationFlowData.steps;
+      print('📄 Loaded ${stepsData.length} conversation steps from Dart');
       
-      // Parse YAML
-      final yamlMap = loadYaml(yamlString);
-      if (yamlMap is! Map) {
-        throw ConversationFlowException('YAML root must be a Map, got ${yamlMap.runtimeType}');
-      }
-      
-      final conversationFlow = yamlMap['conversation_flow'];
-      if (conversationFlow is! Map) {
-        throw ConversationFlowException('conversation_flow must be a Map, got ${conversationFlow.runtimeType}');
-      }
-      
-      final stepsData = conversationFlow['steps'];
-      if (stepsData is! List) {
-        throw ConversationFlowException('steps must be a List, got ${stepsData.runtimeType}');
+      // Debug: Print first question to verify content
+      if (stepsData.isNotEmpty) {
+        final firstStep = stepsData.first;
+        final questionText = firstStep['question_text'] as String? ?? '';
+        final lines = questionText.split('\n');
+        print('📝 First question preview: ${lines.isNotEmpty ? lines.first : 'N/A'}');
       }
 
       // Convert to ConversationStepConfig objects
@@ -56,18 +50,18 @@ class ConversationFlowLoader {
       // Validate the loaded configuration
       _validateConfiguration(_cachedSteps!);
       
-      print('📄 Loaded ${_cachedSteps!.length} conversation steps from YAML');
+      print('📄 Loaded ${_cachedSteps!.length} conversation steps from Dart configuration');
       return _cachedSteps!;
       
     } catch (e) {
       if (e is ConversationFlowException) {
         rethrow;
       }
-      throw ConversationFlowException('Failed to load conversation flow: $e');
+      throw ConversationFlowException('Failed to load conversation flow from Dart configuration: $e');
     }
   }
 
-  /// Parse individual step configuration from YAML
+  /// Parse individual step configuration from Dart data
   ConversationStepConfig _parseStepConfig(dynamic stepData) {
     if (stepData is! Map) {
       throw ConversationFlowException('Step data must be a Map, got ${stepData.runtimeType}');
@@ -130,7 +124,7 @@ class ConversationFlowLoader {
     );
   }
 
-  /// Parse completion message function from YAML
+  /// Parse completion message function from Dart data
   String Function(bool)? _parseCompletionMessage(dynamic completionMessages) {
     if (completionMessages == null) return null;
     
@@ -215,9 +209,19 @@ class ConversationFlowLoader {
     _cachedSteps = null;
   }
 
-  /// Reload configuration from YAML (clears cache and loads again)
+  /// Reload configuration from Dart data (clears cache and loads again)
   Future<List<ConversationStepConfig>> reloadConfiguration() async {
     clearCache();
+    return loadConversationFlow();
+  }
+
+  /// Force reload configuration (for development - bypasses all caches)
+  Future<List<ConversationStepConfig>> forceReloadConfiguration() async {
+    clearCache();
+    
+    // With Dart configuration, force reload just clears cache
+    // since Dart files reload automatically with hot reload
+    print('🔄 Force reloading Dart configuration...');
     return loadConversationFlow();
   }
 } 
